@@ -1,0 +1,76 @@
+GET https://localhost:7100/api/peliculas
+
+###
+GET https://localhost:7100/api/peliculas?s=Dun
+
+###
+GET https://localhost:7100/api/peliculas/2
+
+###
+POST https://localhost:7100/api/peliculas
+Content-Type: application/json
+
+{
+    "titulo": "Pelicula de prueba",
+    "sinopsis": "Sinopsis de prueba",
+    "anio": 2024,
+    "poster": "Sin poster",
+    "categorias": [2, 3]
+}
+
+
+###
+
+PUT https://localhost:7100/api/peliculas/16
+Content-Type: application/json
+
+{
+    "peliculaid": 16,
+    "titulo": "Paw Patrol: la Super Pelicula",
+    "sinopsis": "Un metiorito magico anterriza en Adventure City y otorga superpoderes a los cachorros de PAW Patrol, convirtiendolos en The Mighty Pups. ",
+    "anio": 2024,
+    "poster": "https://m.media-amazon.com/images/M/MV5BMGI4NTNlODItMGJlZi00OTIwLTlkM2ItMWFkZjJhZDIzMDc3XkEyXkFqcGdeQXVyMTEyNzQ1MTk0._V1_SX300.jpg",
+    "categorias": [1, 2, 3]
+}
+
+###
+DELETE https://localhost:7100/api/peliculas/16
+
+
+
+### Agregar nuevas películas ###
+POST https://localhost:7100/api/peliculas
+Content-Type: application/json
+
+{
+    "titulo": "Madagascar uno",
+    "sinopsis": "Cuatro animales del zoológico de Central Park, Nueva York, (Álex el león, Marty la cebra, Gloria la hipopótamo y Melman la jirafa) que han estado toda su vida en cautiverio, a los que una serie de casualidades acaba dejándolos en plena naturaleza en la isla de Madagascar.",
+    "anio": 2024,
+    "poster": "sin poster",
+    "categorias": [1, 2]
+}
+
+###
+POST https://localhost:7100/api/peliculas
+Content-Type: application/json
+
+{
+    "titulo": "Madagascar dos",
+    "sinopsis": "El león Alex, la cebra Marty, la jirafa Melman y la hipopótamo Gloria permanecen en Madagascar a la espera de regresar a su zoológico. En su empeño por volver a casa, consiguen arreglan un viejo aeroplano, que les hará llegar hasta las inmensas llanuras africanas.",
+    "anio": 2024,
+    "poster": "sin poster",
+    "categorias": [2, 3]
+}
+
+
+##
+POST https://localhost:7100/api/peliculas
+Content-Type: application/json
+
+{
+    "titulo": "Madagascar tres",
+    "sinopsis": "Alex el león, Marty la cebra, Melman la jirafa y Gloria la hipopótamo están decididos a regresar como sea al zoo de Central Park en Nueva York. Sin embargo, se ven obligados a tomar un desvío y viajar a Europa para encontrar a los pingüinos y chimpancés que asaltaron el banco del casino de Monte Carlo. Cuando el oficial francés de control animal, la Capitana Chantal DuBois, da con ellos, Alex y compañía se ven obligados a ocultarse en un circo ambulante.",
+    "anio": 2024,
+    "poster": "sin poster",
+    "categorias": [1, 3]
+}
