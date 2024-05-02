@@ -1,32 +1,32 @@
 using System.Data.Common;
+using System.Security.Cryptography.X509Certificates;
 using backendnet.Data;
 using backendnet.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace backendnet.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
 
-public class PeliculasController : Controller
+public class PeliculasController(IdentityContext context) : Controller
 {
-     private readonly DataContext _context;
-    public PeliculasController(DataContext context){
-    _context = context;
-    }
     //GET: api/peliculas
     [HttpGet]
+    [Authorize (Roles = "Usuario, Administrador")]
      public async Task<ActionResult<IEnumerable<Pelicula>>> GetPeliculas(string? s) {
         if (string.IsNullOrEmpty(s))
-            return await _context.Pelicula.Include(i => i.Categorias).AsNoTracking().ToListAsync();
-        return await _context.Pelicula.Include(i => i.Categorias).Where(c => c.Titulo.Contains(s)).AsNoTracking().ToListAsync();
+            return await context.Pelicula.Include(i => i.Categorias).AsNoTracking().ToListAsync();
+        return await context.Pelicula.Include(i => i.Categorias).Where(c => c.Titulo.Contains(s)).AsNoTracking().ToListAsync();
     }
 
     //GET : api/peliculas/5
     [HttpGet("{id}")]
+    [Authorize (Roles = "Usuario, Administrador")]
     public async Task<ActionResult<Pelicula>> GetPelicula(int id){
-        var pelicula = await _context.Pelicula.Include(i => i.Categorias).AsNoTracking().FirstOrDefaultAsync(s => s.PeliculaId == id);
+        var pelicula = await context.Pelicula.Include(i => i.Categorias).AsNoTracking().FirstOrDefaultAsync(s => s.PeliculaId == id);
 
         if (pelicula == null){
         return NotFound();
@@ -36,6 +36,7 @@ public class PeliculasController : Controller
 
     //POST : api/peliculas
     [HttpPost]
+    [Authorize (Roles = "Administrador")]
     public async Task<ActionResult<Pelicula>> PostPelicula(PeliculaDTO peliculaDTO){
         Pelicula pelicula = new(){
         Titulo = peliculaDTO.Titulo,
@@ -45,16 +46,8 @@ public class PeliculasController : Controller
         Categorias = []
     };
 
-    if (peliculaDTO.Categorias != null){
-        foreach(var CategoriaId in peliculaDTO.Categorias){
-            Categoria? categoria = await _context.Categoria.FindAsync(CategoriaId);
-            if(categoria != null)
-            pelicula.Categorias.Add(categoria);
-        }
-    }
-
-    _context.Pelicula.Add(pelicula);
-    await _context.SaveChangesAsync();
+    context.Pelicula.Add(pelicula);
+    await context.SaveChangesAsync();
 
     return CreatedAtAction(nameof(GetPelicula), new {id = pelicula.PeliculaId}, pelicula);
 
@@ -63,12 +56,13 @@ public class PeliculasController : Controller
 
     //PUT: api/peliculas/5
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutPelicula(int id, PeliculaDTO peliculaDTO){
+    [Authorize (Roles = "Administrador")]   
+     public async Task<IActionResult> PutPelicula(int id, PeliculaDTO peliculaDTO){
         if (id != peliculaDTO.PeliculaId){
             return BadRequest();
         }
 
-        var pelicula = await _context.Pelicula.Include(i => i.Categorias).FirstOrDefaultAsync(s => s.PeliculaId == id);
+        var pelicula = await context.Pelicula.Include(i => i.Categorias).FirstOrDefaultAsync(s => s.PeliculaId == id);
         if (pelicula == null){
             return NotFound();
         }
@@ -79,33 +73,62 @@ public class PeliculasController : Controller
         pelicula.Poster = peliculaDTO.Poster;
         pelicula.Categorias = [];
 
-        if (peliculaDTO.Categorias != null){
-            foreach(var CategoriaId in peliculaDTO.Categorias){
-                Categoria? categoria = await _context.Categoria.FindAsync(CategoriaId);
-                if (categoria != null)
-                pelicula.Categorias.Add(categoria);
-            }
-        }
-
-    //Aqui colocamos el try por si alguien elimina el registro mientras lo usamos
-        try{
-            await _context.SaveChangesAsync();
-        }catch(DbException ex){
-            Console.WriteLine(ex.Message);
-        return BadRequest();
-        }
         return NoContent();
     }
 
     //DELETE: api/peliculas/5
     [HttpDelete("{id}")]
+    [Authorize (Roles = "Administrador")]
     public async Task<IActionResult> DeletePelicula(int id){
-        var pelicula = await _context.Pelicula.FindAsync(id);
+        var pelicula = await context.Pelicula.FindAsync(id);
         if (pelicula == null){
         return NotFound();
         }
-        _context.Pelicula.Remove(pelicula);
-        await _context.SaveChangesAsync();
+        context.Pelicula.Remove(pelicula);
+        await context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    //POST: api/ peliculas/5/categoria
+    [HttpPost("{id}/categoria")]
+    [Authorize (Roles = "Administrador")]
+    public async Task<IActionResult>PostCategoriaPelicula(int id, AsignaCategoriaDTO itemToAdd){
+        Categoria? categoria = await context.Categoria.FindAsync(itemToAdd.CategoriaId);
+        if (categoria == null)
+            return NotFound();
+        
+        var pelicula = await context.Pelicula.Include(i => i.Categorias).FirstOrDefaultAsync(s => s.PeliculaId == id);
+        if (pelicula == null)
+            return NotFound();
+        
+        if (pelicula?.Categorias?.FirstOrDefault(categoria) != null)
+        {
+            pelicula.Categorias.Add(categoria);
+            await context.SaveChangesAsync();
+        }
+
+        return NoContent();
+    }
+
+    //DELETE: api/peliculas/5/categoria
+    [HttpDelete("{id}/categoria")]
+    [Authorize (Roles = "Administrador")]
+
+    public async Task<IActionResult> DeleteCategoriaPelicula(int id, AsignaCategoriaDTO itemToDelete){
+        Categoria? categoria = await context.Categoria.FindAsync(itemToDelete.CategoriaId);
+        if (categoria == null)
+            return NotFound();
+        
+        var pelicula = await context.Pelicula.Include(i => i.Categorias).FirstOrDefaultAsync(s => s.PeliculaId == id);
+        if (pelicula == null)
+            return NotFound();
+        
+        if (pelicula?.Categorias?.FirstOrDefault(categoria) != null)
+        {
+            pelicula.Categorias.Remove(categoria);
+            await context.SaveChangesAsync();
+        }
 
         return NoContent();
     }

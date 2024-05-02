@@ -1,7 +1,7 @@
 using System.Data.Common;
 using backendnet.Data;
 using backendnet.Models;
-using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,25 +9,22 @@ namespace backendnet.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize (Roles = "Administrador")]
 
-public class CategoriasController : Controller{
-    private readonly DataContext _context;
-    public CategoriasController(DataContext context){
-    _context = context;
-    }
+public class CategoriasController (IdentityContext context) : Controller
+{
     //GET: api/categorias
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Categoria>>> GetCategorias() {
-    return await _context.Categoria.AsNoTracking().ToListAsync();
+    return await context.Categoria.AsNoTracking().ToListAsync();
     }
 
     //GET : api/categorias/5
     [HttpGet("{id}")]
     public async Task<ActionResult<Categoria>> GetCategoria(int id){
-        var categoria = await _context.Categoria.FindAsync(id);
+        var categoria = await context.Categoria.FindAsync(id);
 
-        if (categoria == null){
-        return NotFound();
+        if (categoria == null){return NotFound();
         }
         return categoria;
     }
@@ -39,8 +36,8 @@ public class CategoriasController : Controller{
         Nombre = categoriaDTO.Nombre
     };
 
-        _context.Categoria.Add(categoria);
-        await _context.SaveChangesAsync();
+        context.Categoria.Add(categoria);
+        await context.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetCategoria), new {id = categoria.CategoriaId}, categoria);
     }
@@ -52,32 +49,28 @@ public class CategoriasController : Controller{
             return BadRequest();
         }
 
-        var categoria = await _context.Categoria.FindAsync(id);
+        var categoria = await context.Categoria.FindAsync(id);
         if (categoria == null){
             return NotFound();
         }
 
         categoria.Nombre = categoriaDTO.Nombre;
-
     //Aqui colocamos el try por si alguien elimina el registro mientras lo usamos
-        try{
-            await _context.SaveChangesAsync();
-        }catch(DbException ex){
-            Console.WriteLine(ex.Message);
-        return BadRequest();
-        }
+        await context.SaveChangesAsync();
         return NoContent();
     }
 
     //DELETE: api/Categorias/5
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteCategoria(int id){
-        var pelicula = await _context.Pelicula.FindAsync(id);
-        if (pelicula == null){
+        var categoria = await context.Categoria.FindAsync(id);
+        if (categoria == null)
         return NotFound();
-        }
-        _context.Pelicula.Remove(pelicula);
-        await _context.SaveChangesAsync();
+        
+        if (categoria.Protegida) return BadRequest();
+
+        context.Categoria.Remove(categoria);
+        await context.SaveChangesAsync();
 
         return NoContent();
     }
